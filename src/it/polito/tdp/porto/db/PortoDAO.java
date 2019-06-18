@@ -4,8 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 
 import it.polito.tdp.porto.model.Author;
+import it.polito.tdp.porto.model.AuthorMap;
 import it.polito.tdp.porto.model.Paper;
 
 public class PortoDAO {
@@ -62,6 +65,58 @@ public class PortoDAO {
 
 		} catch (SQLException e) {
 			 e.printStackTrace();
+			throw new RuntimeException("Errore Db");
+		}
+	}
+	
+	public List<Author> getCoautori(Author a, AuthorMap am) {
+		String sql = "SELECT distinct authorid FROM creator WHERE authorid!=? and eprintid IN (SELECT eprintid FROM creator,author WHERE creator.authorid=author.id AND author.id=?)";
+		List<Author> result = new LinkedList<Author>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1,a.getId());
+			st.setInt(2,a.getId());
+			
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Author autore = am.get(rs.getInt("authorid"));
+				result.add(autore);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			// e.printStackTrace();
+			throw new RuntimeException("Errore Db");
+		}
+	}
+	
+	public List<Author> getAllAutori(AuthorMap am) {
+
+		final String sql = "SELECT * FROM author";
+		List<Author> result = new LinkedList<Author>();
+		
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				Author autore = new Author(rs.getInt("id"), rs.getString("lastname"), rs.getString("firstname"));
+				am.add(autore);
+				result.add(autore);
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			// e.printStackTrace();
 			throw new RuntimeException("Errore Db");
 		}
 	}
